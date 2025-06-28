@@ -1,77 +1,76 @@
-<?php
+<!DOCTYPE html>
+<html lang="fr">
 
-/**
- * Fonctions utilitaires pour l'application de gestion de bibliothèque
- */
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Bibliothèque</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
 
-// Nettoyer les entrées utilisateur
-function clean_input($data)
-{
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
-}
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.php">Bibliothèque</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.php">Accueil</a>
+                    </li>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.php?page=livres">Catalogue</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.php?page=mes-emprunts">Mes Emprunts</a>
+                        </li>
+                        <?php if ($_SESSION['role'] === 'admin'): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="index.php?page=emprunts">Gestion Emprunts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="index.php?page=retours">Retours</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="index.php?page=commandes">Commandes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="index.php?page=utilisateurs">Utilisateurs</a>
+                            </li>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </ul>
+                <ul class="navbar-nav">
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <li class="nav-item">
+                            <span class="nav-link">Bonjour, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.php?page=logout">Déconnexion</a>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.php?page=login">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.php?page=register">Inscription</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-// Générer un message d'alerte
-function alert_message($message, $type = 'info')
-{
-    return '<div class="alert alert-' . $type . '">' . $message . '</div>';
-}
-
-// Vérifier si un livre est disponible pour l'emprunt
-function is_livre_disponible($pdo, $livre_id)
-{
-    $stmt = $pdo->prepare("SELECT quantite, emprunts_actifs FROM livres WHERE id = ?");
-    $stmt->execute([$livre_id]);
-    $livre = $stmt->fetch();
-
-    return $livre && ($livre['quantite'] - $livre['emprunts_actifs'] > 0);
-}
-
-// Mettre à jour le nombre d'emprunts actifs pour un livre
-function update_emprunts_actifs($pdo, $livre_id, $increment = true)
-{
-    $operation = $increment ? '+1' : '-1';
-    $stmt = $pdo->prepare("UPDATE livres SET emprunts_actifs = emprunts_actifs $operation WHERE id = ?");
-    return $stmt->execute([$livre_id]);
-}
-
-// Formater une date au format français
-function format_date($date)
-{
-    if (!$date) return '';
-    $timestamp = strtotime($date);
-    return date('d/m/Y', $timestamp);
-}
-
-// Calculer le retard en jours
-function calculer_retard($date_retour_prevue)
-{
-    $today = new DateTime();
-    $retour = new DateTime($date_retour_prevue);
-    $diff = $today->diff($retour);
-
-    if ($today > $retour) {
-        return $diff->days;
-    }
-
-    return 0;
-}
-
-// Calculer les frais de retard (1€ par jour de retard)
-function calculer_frais_retard($date_retour_prevue)
-{
-    $retard = calculer_retard($date_retour_prevue);
-    return $retard * 1; // 1€ par jour
-}
-
-// Vérifier si l'utilisateur a atteint la limite d'emprunts (max 5 livres)
-function can_borrow($pdo, $user_id)
-{
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM emprunts WHERE utilisateur_id = ? AND date_retour IS NULL");
-    $stmt->execute([$user_id]);
-    $count = $stmt->fetchColumn();
-
-    return $count < 5;
-}
+    <div class="container mb-4">
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-info">
+                <?php
+                echo $_SESSION['message'];
+                unset($_SESSION['message']);
+                ?>
+            </div>
+        <?php endif; ?>

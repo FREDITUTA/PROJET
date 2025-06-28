@@ -1,4 +1,4 @@
-<?php
+ <?php
 // Paramètres de connexion à la base de données
 $host = 'localhost';
 $dbname = 'bibliotheque';
